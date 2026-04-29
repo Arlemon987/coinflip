@@ -1,0 +1,284 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Coin Flip - Choice Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --gold: #f1c40f;
+            --silver: #bdc3c7;
+        }
+
+        body {
+            background: radial-gradient(circle, #1a2a3a 0%, #050505 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* 3D Coin Container */
+        .coin-container {
+            perspective: 1000px;
+            width: 180px;
+            height: 180px;
+            margin: 1.5rem auto;
+        }
+
+        .coin {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .coin div {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 6px solid rgba(0,0,0,0.3);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .heads {
+            background: linear-gradient(135deg, #f1c40f, #d4ac0d);
+            color: #7d6608;
+            z-index: 2;
+        }
+
+        .tails {
+            background: linear-gradient(135deg, #bdc3c7, #7f8c8d);
+            color: #2c3e50;
+            transform: rotateY(180deg);
+        }
+
+        /* Animation Classes */
+        @keyframes flip-heads {
+            0% { transform: rotateY(0) translateY(0); }
+            50% { transform: rotateY(900deg) translateY(-100px); }
+            100% { transform: rotateY(1800deg) translateY(0); }
+        }
+
+        @keyframes flip-tails {
+            0% { transform: rotateY(0) translateY(0); }
+            50% { transform: rotateY(990deg) translateY(-100px); }
+            100% { transform: rotateY(1980deg) translateY(0); }
+        }
+
+        .animate-heads { animation: flip-heads 1.8s forwards cubic-bezier(0.1, 0.5, 0.3, 1); }
+        .animate-tails { animation: flip-tails 1.8s forwards cubic-bezier(0.1, 0.5, 0.3, 1); }
+
+        .choice-btn {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .choice-btn.selected {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.2);
+            transform: scale(1.05);
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+        }
+
+        .win-glow { animation: win-pulse 1s infinite alternate; }
+        @keyframes win-pulse {
+            from { text-shadow: 0 0 5px #22c55e; }
+            to { text-shadow: 0 0 20px #22c55e; }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-md w-full text-center space-y-6">
+        <header>
+            <h1 class="text-3xl font-black tracking-tighter uppercase mb-1 italic">Coin Flip Pro</h1>
+            <div class="flex justify-center gap-2">
+                <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-full border border-green-500/30">
+                    STREAK: <span id="streak-count">0</span>
+                </span>
+                <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full border border-blue-500/30">
+                    ACCURACY: <span id="accuracy">0%</span>
+                </span>
+            </div>
+        </header>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass-morphism p-3">
+                <div class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Wins</div>
+                <div id="wins-count" class="text-xl font-bold text-green-400">0</div>
+            </div>
+            <div class="glass-morphism p-3">
+                <div class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Losses</div>
+                <div id="losses-count" class="text-xl font-bold text-red-400">0</div>
+            </div>
+        </div>
+
+        <!-- The Coin -->
+        <div class="coin-container">
+            <div id="coin" class="coin">
+                <div class="heads">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
+                    </svg>
+                </div>
+                <div class="tails">
+                    <span class="text-7xl font-serif">T</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Choice Selector -->
+        <div class="space-y-3">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pick your side</p>
+            <div class="flex gap-4">
+                <button onclick="selectChoice('heads')" id="btn-heads" class="choice-btn flex-1 py-4 glass-morphism flex flex-col items-center gap-2 group">
+                    <div class="w-4 h-4 rounded-full bg-yellow-500 group-hover:scale-125 transition-transform"></div>
+                    <span class="text-sm font-bold uppercase">Heads</span>
+                </button>
+                <button onclick="selectChoice('tails')" id="btn-tails" class="choice-btn flex-1 py-4 glass-morphism flex flex-col items-center gap-2 group">
+                    <div class="w-4 h-4 rounded-full bg-slate-400 group-hover:scale-125 transition-transform"></div>
+                    <span class="text-sm font-bold uppercase">Tails</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Status -->
+        <div id="status" class="h-8 text-lg font-bold flex items-center justify-center transition-all duration-300">
+            Select a side to flip!
+        </div>
+
+        <!-- Action Button -->
+        <button id="flip-btn" disabled class="w-full py-4 bg-blue-600 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed hover:bg-blue-500 rounded-xl text-lg font-black uppercase tracking-tighter transition-all shadow-lg shadow-blue-900/20">
+            Flip Coin
+        </button>
+
+        <button id="reset-btn" class="text-slate-600 hover:text-slate-400 text-[10px] uppercase font-bold tracking-widest transition-colors">
+            Reset All Progress
+        </button>
+    </div>
+
+    <script>
+        const coin = document.getElementById('coin');
+        const flipBtn = document.getElementById('flip-btn');
+        const statusDisplay = document.getElementById('status');
+        const streakDisplay = document.getElementById('streak-count');
+        const accuracyDisplay = document.getElementById('accuracy');
+        const winsDisplay = document.getElementById('wins-count');
+        const lossesDisplay = document.getElementById('losses-count');
+
+        let userChoice = null;
+        let stats = { wins: 0, losses: 0, streak: 0, total: 0 };
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSfx(type) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'flip') {
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            } else if (type === 'win') {
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            }
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function selectChoice(side) {
+            userChoice = side;
+            document.getElementById('btn-heads').classList.remove('selected');
+            document.getElementById('btn-tails').classList.remove('selected');
+            document.getElementById(`btn-${side}`).classList.add('selected');
+            
+            flipBtn.disabled = false;
+            statusDisplay.innerText = `You chose ${side.toUpperCase()}!`;
+            statusDisplay.className = "h-8 text-lg font-bold flex items-center justify-center text-blue-400";
+        }
+
+        function flipCoin() {
+            if (!userChoice || flipBtn.disabled) return;
+
+            flipBtn.disabled = true;
+            statusDisplay.innerText = "The coin is in the air...";
+            statusDisplay.className = "h-8 text-lg font-bold flex items-center justify-center text-slate-400 italic";
+            
+            const isHeads = Math.random() < 0.5;
+            const result = isHeads ? 'heads' : 'tails';
+            
+            coin.classList.remove('animate-heads', 'animate-tails');
+            void coin.offsetWidth;
+            
+            playSfx('flip');
+            coin.classList.add(isHeads ? 'animate-heads' : 'animate-tails');
+
+            setTimeout(() => {
+                const won = userChoice === result;
+                updateStats(won);
+                
+                statusDisplay.innerText = won ? "WINNER!" : "BETTER LUCK NEXT TIME!";
+                statusDisplay.className = `h-8 text-2xl font-black flex items-center justify-center ${won ? 'text-green-500 win-glow' : 'text-red-500'}`;
+                
+                if (won) playSfx('win');
+                flipBtn.disabled = false;
+            }, 1800);
+        }
+
+        function updateStats(won) {
+            stats.total++;
+            if (won) {
+                stats.wins++;
+                stats.streak++;
+            } else {
+                stats.losses++;
+                stats.streak = 0;
+            }
+
+            winsDisplay.innerText = stats.wins;
+            lossesDisplay.innerText = stats.losses;
+            streakDisplay.innerText = stats.streak;
+            
+            const acc = Math.round((stats.wins / stats.total) * 100);
+            accuracyDisplay.innerText = acc + "%";
+        }
+
+        flipBtn.addEventListener('click', flipCoin);
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            stats = { wins: 0, losses: 0, streak: 0, total: 0 };
+            winsDisplay.innerText = "0";
+            lossesDisplay.innerText = "0";
+            streakDisplay.innerText = "0";
+            accuracyDisplay.innerText = "0%";
+            statusDisplay.innerText = "Stats Cleared";
+        });
+    </script>
+</body>
+</html>
+
+```
